@@ -49,50 +49,53 @@ def wait_for_xpath_element(driver,xpathstr):
 def get_stock_realtime_data():
     urls = ["http://www.boerse-online.de/aktien/realtimekurse/Dow_Jones", "http://www.boerse-online.de/aktien/realtimekurse/Euro_Stoxx_50", "http://www.boerse-online.de/aktien/realtimekurse/TecDAX", "http://www.boerse-online.de/aktien/realtimekurse/SDAX", "http://www.boerse-online.de/aktien/realtimekurse/MDAX", "http://www.boerse-online.de/aktien/realtimekurse/DAX"]
     writer = pd.ExcelWriter('output.xlsx')
-        for url in urls:
-            StockMarket = url[49:]
-            aktienIsinLst, aktienNameLst, aktienIndexLst, aktienBidLst, aktienAskLst, kursDatumLst = ([] for i in range(6))
-            df = pd.DataFrame()
-            print ("*** Get stock data from "+url+" ***")
-            locale.setlocale(locale.LC_ALL, 'deu_deu')
-            driver = open_browser()
-            driver.get(url)
-            cookiesXpath = '// *[ @ id = "cookie-overlay"] / div / button'
-            findCookiesXpath = driver.find_element_by_xpath(cookiesXpath)
-            findCookiesXpath.click()
-            while not(page_has_loaded(driver)):
-                time.sleep(1)
-            html = driver.page_source
-            soup = BeautifulSoup(html, "html.parser")
-            for row in soup.find_all("tr"):
-                aktien_isin=""
-                cols = row.find_all("td")
-                if (len(cols) == 8):
-                    stockIndex=url[49:]
-                    stockName = cols[0].text.strip()
-                    stockIsin = cols[1].text.strip()
-                    stockBid = cell_2_float(cols[3].text)
-                    stockAsk = cell_2_float(cols[4].text)
-                    if (stockAsk==0.0):
-                        stockAsk=cell_2_float(cols[2].text)
-                    stockDatum = time.strftime("%Y-%m-%d")
-                if (aktien_isin!="") and (aktien_bid>0.0):
-                    print(stockIsin, stockName, stockIndex, stockBid, stockAsk, stockDatum)
-                    aktienIsinLst.append(aktien_isin)
-                    aktienNameLst.append(aktien_name)
-                    aktienIndexLst.append(aktien_index)
-                    aktienBidLst.append(aktien_bid)
-                    aktienAskLst.append(aktien_ask)
-                    kursDatumLst.append(kurs_datum)
-            df['aktien_isin'] = aktien_isin_lst
-            df['aktien_name'] = aktien_name_lst
-            df['aktien_index'] = aktien_index_lst
-            df['aktien_bid'] = aktien_bid_lst
-            df['aktien_ask'] = aktien_ask_lst
-            df['kurs_datum'] = kurs_datum_lst
-            df.to_excel(writer, StockMarket)
-            writer.save()
+    for url in urls:
+        StockMarket = url[49:]
+        stockIsinLst, stockNameLst, stockIndexLst, stockBidLst, stockAskLst, stockDateLst = ([] for i in range(6))
+        df = pd.DataFrame()
+        print ("*** Get stock data from "+url+" ***")
+        locale.setlocale(locale.LC_ALL, 'deu_deu')
+        driver = open_browser()
+        driver.get(url)
+        cookiesXpath = '// *[ @ id = "cookie-overlay"] / div / button'
+        findCookiesXpath = driver.find_element_by_xpath(cookiesXpath)
+        findCookiesXpath.click()
+        while not(page_has_loaded(driver)):
+            time.sleep(1)
+        html = driver.page_source
+        soup = BeautifulSoup(html, "html.parser")
+        for row in soup.find_all("tr"):
+            stockIsin=""
+            cols = row.find_all("td")
+            if (len(cols) == 8):
+                stockIndex=url[49:]
+                stockName = cols[0].text.strip()
+                stockIsin = cols[1].text.strip()
+                stockBid = cell_2_float(cols[3].text)
+                stockAsk = cell_2_float(cols[4].text)
+                if (stockAsk==0.0):
+                    stockAsk=cell_2_float(cols[2].text)
+                stockDate = time.strftime("%Y-%m-%d")
+            if (stockIsin!="") and (stockBid>0.0):
+                print(stockIsin, stockName, stockIndex, stockBid, stockAsk, stockDate)
+                stockIsinLst.append(stockIsin)
+                stockNameLst.append(stockName)
+                stockIndexLst.append(stockIndex)
+                stockBidLst.append(stockBid)
+                stockAskLst.append(stockAsk)
+                stockDateLst.append(stockDate)
+        df['aktien_isin'] = stockIsinLst
+        df['aktien_name'] = stockNameLst
+        df['aktien_index'] = stockIndexLst
+        df['aktien_bid'] = stockBidLst
+        df['aktien_ask'] = stockAskLst
+        df['kurs_date'] = stockDateLst
+        df.to_excel(writer, StockMarket)
+        writer.save()
+        if df.empty:
+            print('Layout has changed, please check.')
+        else:
             print('DataFrame is written successfully to Excel Sheet.')
-            driver.quit()
+    driver.quit()
 
 get_stock_realtime_data()
